@@ -1,0 +1,25 @@
+# Secrets
+.env
+
+# Data and model outputs (large / licensed data)
+data/
+
+# Model and dataset caches
+.cache/
+hf_cache/
+huggingface/
+*.safetensors
+*.bin
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
