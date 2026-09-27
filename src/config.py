@@ -21,13 +21,15 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 
 # --- Data ---
 DATASET_NAME = "MBZUAI/ArabicMMLU"
-N_SAMPLES = 20  # start small; raise to 1500 after the pilot run
+N_SAMPLES = 1500  # pilot was N=10
 SEED = 42
 
 # --- Models ---
-WEAK_MODEL = "Qwen/Qwen2.5-1.5B-Instruct"  # local, CPU
-WEAK_MODEL_FALLBACK = "Qwen/Qwen2.5-0.5B-Instruct"
-STRONG_MODEL = "Qwen/Qwen2.5-72B-Instruct"  # via HF Inference Providers; confirmed in Phase 2
+# Both models run locally on CPU ($0). HF free API credits ran out during the pilot,
+# where the pair was Qwen2.5-1.5B (weak) vs Qwen2.5-72B via API (strong).
+WEAK_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
+STRONG_MODEL = "Qwen/Qwen2.5-3B-Instruct"
+STRONG_BACKEND = "local"  # "local" (transformers on CPU) or "api" (HF Inference Providers)
 MAX_NEW_TOKENS = 8
 TEMPERATURE = 0.0
 
