@@ -4,9 +4,11 @@ A RouteLLM-style router for Arabic: for each multiple-choice question it decides
 small, cheap model is enough or whether the question should go to a larger, more expensive
 model. Evaluated on ArabicMMLU.
 
-> **Status:** all code is written and tested. The small-model run is complete; the
-> large-model run is still pending, so the results section below is not filled in yet.
-> No number in this README comes from simulated data.
+> **Main finding:** the two models disagree a lot. A perfect router could reach 67.6%
+> accuracy, compared with 53.1% for the strong model alone. But routers that only read
+> the question text barely beat random routing here. The weak model's correctness is
+> driven mostly by a bias toward answering "A", which cannot be seen from the question.
+> All numbers below come from real model runs on 1,011 questions.
 
 ## Problem: cost vs. quality
 
@@ -29,9 +31,16 @@ for English. This project repeats the evaluation for **Arabic**.
     option (the diacritics seem to have been lost), so they cannot be answered.
     That leaves **14,415 questions**.
   - **Working sample:** 1,500 questions, stratified by subject in proportion to subject
-    size (every subject has at least 3), seed 42.
+    size (every subject has at least 3), seed 42, in shuffled order.
+    - The weak model answered all 1,500.
+    - The strong model (about 25 s per question on CPU) was stopped after
+      **1,011**. Because the order was shuffled, those 1,011 are a random subset.
+      They cover all 40 subjects, but the smallest subjects have only 1–2 questions.
+    - **All results use these 1,011 questions.**
 - **Code in this repo:** MIT (see `LICENSE`). The dataset is not redistributed here; it
-  is downloaded from Hugging Face.
+  is downloaded from Hugging Face. The only exception is
+  `results/failure_examples.csv`, which quotes 15 ArabicMMLU questions for the failure
+  analysis (CC BY-NC 4.0, © the ArabicMMLU authors).
 
 ## Models
 
@@ -87,19 +96,101 @@ setting for routing (see Limitations).
 
 ## Results
 
-**Pending the strong-model run.** What is measured so far:
+### The two models (1,011 questions)
 
-| | Value |
-|---|---|
-| Weak model (Qwen2.5-0.5B) accuracy, 1,500 questions | **37.0%** |
-| Accuracy of random guessing (accounts for 2–5 options per question) | 29.6% |
-| Weak-model parse failures | 15 / 1,500 (1.0%): 11 replies were `"ABCD"`, 4 named a letter beyond the options |
-| Share of weak answers that are "A" / share of questions whose correct answer is "A" | 48.6% / 32.7% |
+| | Weak: Qwen2.5-0.5B | Strong: Qwen2.5-3B |
+|---|---|---|
+| Accuracy | **38.2%** | **53.1%** |
+| Parse failures | 1.0% (15 of its 1,500) | 0.6% (6 of 1,011) |
+| Median time per question (laptop CPU) | 3.1 s | 25.5 s |
 
-The weak model has a strong bias toward answering "A".
+- **Random guessing** would score 29.6%. This accounts for questions having 2–5 options.
 
-_After the strong run: metrics tables from `results/metrics_*.csv` and the curves
-`results/curve_*.png` go here._
+**How the answers combine:**
+
+| Weak | Strong | Share of questions |
+|---|---|---|
+| right | right | 23.7% |
+| **wrong** | **right** | **29.4%** (this is `need_strong`) |
+| right | wrong | 14.4% |
+| wrong | wrong | 32.4% |
+
+- **Oracle ceiling: 67.6%.** That is the accuracy if every question went to whichever
+  model gets it right, which is far above the strong model alone.
+- The two models give the same letter on only 38.6% of questions.
+
+### Routing (APGR: 0.5 = random routing; a higher value is better)
+
+**Random 70/30 split** (707 train / 304 test; test weak acc 38.5%, strong acc 51.3%)
+
+| Router | AUC | APGR [95% CI] | % strong for 90% of strong acc | % strong for 95% |
+|---|---|---|---|---|
+| Random | 0.451 | 0.516 [0.321, 0.719] | 52.6 | 67.1 |
+| Length | 0.461 | 0.590 [0.393, 0.870] | 51.6 | 66.4 |
+| TF-IDF + LR | 0.462 | 0.599 [0.423, 0.889] | 40.5 | 53.9 |
+| Embedding + LR | 0.459 | 0.576 [0.392, 0.821] | 46.1 | 61.8 |
+| *Oracle (upper bound)* | *0.569* | *1.435 [1.145, 2.667]* | *7.9* | *10.5* |
+
+**Unseen subjects** (5-fold GroupKFold by subject; every question scored by a router
+that never saw its subject; n = 1,011)
+
+| Router | AUC | APGR [95% CI] | % strong for 90% of strong acc | % strong for 95% |
+|---|---|---|---|---|
+| Random | 0.454 | 0.485 [0.403, 0.562] | 63.7 | 82.7 |
+| Length | 0.471 | 0.595 [0.516, 0.694] | 53.1 | 69.9 |
+| TF-IDF + LR | 0.463 | 0.545 [0.467, 0.630] | 50.3 | 77.5 |
+| Embedding + LR | 0.463 | 0.547 [0.468, 0.630] | 56.6 | 80.4 |
+| *Oracle (upper bound)* | *0.579* | *1.318 [1.182, 1.589]* | *9.7* | *12.4* |
+
+![Accuracy vs. cost, unseen subjects](results/curve_unseen_subjects.png)
+
+Random split: [results/curve_random_split.png](results/curve_random_split.png).
+
+**What this shows:**
+
+- **No learned router clearly beats random routing.**
+  - On the random split, every router's 95% CI overlaps the random baseline's.
+  - On unseen subjects, the TF-IDF and embedding routers also overlap random.
+  - The simple **length baseline** has the highest APGR there (0.595). Its CI only just
+    clears random's (lower bound 0.516 vs. random's upper bound 0.562). With 1,011
+    questions, that difference is weak evidence.
+- **The AUROC at detecting `need_strong` questions was 0.51–0.53 for every real router**,
+  which is close to a coin flip.
+- **The opportunity is large but not being captured.** The oracle reaches 90% of
+  strong-model accuracy with under 10% of questions sent to strong. The routers need
+  40–57%.
+
+### Why the routers fail here
+
+The weak model answers "A" on 49.6% of these questions, while "A" is correct on only
+32.6%. That bias decides most of its outcomes:
+
+| True answer | Weak accuracy | Strong accuracy | `need_strong` rate |
+|---|---|---|---|
+| A | 66.1% | 55.8% | 14.2% |
+| B–E | 24.7% | 51.8% | 36.7% |
+
+- When the answer is not "A", the weak model scores **24.7%, below random guessing**.
+- So whether a question "needs the strong model" depends mostly on the hidden answer
+  key, not on anything a router can see in the question.
+- The router's job is to predict whether the weak model is right, and here the weak
+  model is close to a guessing machine with a letter preference.
+
+### Failure analysis (embedding router)
+
+Details are in `results/failure_examples.csv` and `results/failure_by_subject.csv`.
+
+- **Operating point:** the top 46.1% of the random-split test set sent to strong.
+  - It **missed** 45 of the 89 questions that needed the strong model.
+  - **51 of its 140 strong calls were wasted**, because the weak model was already right.
+- **Among the 15 most confident mistakes**, questions with a reading passage are
+  overrepresented: 25% of the missed and 43% of the wasted, against 6% of all test
+  questions. Long Arabic Language passages got high scores even when the weak model
+  answered them correctly.
+- **Per subject** (unseen-subject setup; 17 subjects have enough data to rank):
+  - Lowest AUROC: Social Science (Primary) 0.38 and Arabic Language (Primary) 0.44.
+  - Highest: Economics (High) 0.83, but on only 26 questions with 5 positives.
+  - These per-subject numbers rest on 20–105 questions each and are noisy.
 
 ## Limitations
 
@@ -109,11 +200,15 @@ _After the strong run: metrics tables from `results/metrics_*.csv` and the curve
 - **The data is ArabicMMLU:** Modern Standard Arabic school-exam questions. It contains
   no dialects and is not real user traffic.
 - **Possible benchmark contamination:** pretrained models may have seen these questions.
-- **Sample size:** 1,500 questions (450 in the random test split). This limits precision;
-  confidence intervals are reported. Per-subject numbers rest on 20–146 questions and
-  only show large differences.
-- **Letter bias:** the weak model's preference for "A" means some of its correct answers
-  are lucky guesses.
+- **Sample size:** 1,011 questions with both models' answers (304 in the random test
+  split), because the strong run was stopped early to save time. The confidence
+  intervals are wide. Per-subject numbers rest on 20–105 questions and only show large
+  differences. 23 of the 40 subjects have too few questions to rank.
+- **Letter bias dominates the label:** the weak model's "A" preference makes its
+  correctness largely unpredictable from the question text. A stronger weak model, or
+  shuffling the option order, could give routers a much more learnable signal.
+- **One prompt, greedy decoding:** different prompts or option orders could change both
+  models' accuracy and the routing results.
 
 ## How to reproduce
 
@@ -130,7 +225,8 @@ python -m src.data              # load + clean ArabicMMLU, write the stratified 
 python -m pytest -q             # 48 unit tests
 
 scripts\run_model.bat weak      # weak model on all 1,500 questions (own window, resumable)
-scripts\run_model.bat strong    # strong model (needs ~6.5 GB free RAM)
+scripts\run_model.bat strong    # strong model (needs ~6.5 GB free RAM; ~25 s/question;
+                                #   can be stopped any time, as here after 1,011)
 scripts\run_analysis.bat        # labels, routers, evaluation, failure analysis -> results\
 
 python -m src.demo "ما عاصمة الإمارات العربية المتحدة؟

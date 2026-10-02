@@ -1,0 +1,41 @@
+﻿subject,n,need_strong,auroc,missed_rate,wasted_rate
+Social Science (Primary),49,19,0.375,0.327,0.102
+Arabic Language (Primary),20,6,0.44,0.2,0.0
+Islamic Studies (High),23,7,0.446,0.043,0.478
+History (High),53,16,0.448,0.151,0.189
+Biology (High),105,27,0.476,0.057,0.295
+Islamic Studies,41,9,0.483,0.098,0.171
+Arabic Language (General),41,18,0.524,0.122,0.244
+Islamic Studies (Primary),70,18,0.534,0.157,0.143
+Math (Primary),25,8,0.551,0.32,0.0
+Law (Prof),24,15,0.585,0.208,0.167
+Geography (High),83,19,0.587,0.024,0.241
+Arabic Language (Grammar),25,8,0.596,0.28,0.04
+General Knowledge,61,16,0.607,0.115,0.131
+Driving Test,84,16,0.625,0.024,0.298
+Natural Science (Primary),20,5,0.627,0.05,0.3
+Arabic Language (High),31,6,0.687,0.0,0.194
+Economics (High),26,5,0.829,0.0,0.423
+Accounting (Univ),4,1,,0.25,0.25
+Arabic Language (Middle),2,1,,0.0,0.0
+Civics (High),4,0,,0.0,0.0
+Civics (Middle),14,3,,0.0,0.357
+Computer Science (High),19,8,,0.263,0.0
+Computer Science (Middle),1,1,,0.0,0.0
+Computer Science (Primary),12,1,,0.083,0.25
+Computer Science (Univ),6,2,,0.0,0.167
+Economics (Middle),9,3,,0.222,0.333
+Economics (Univ),9,4,,0.0,0.222
+General Knowledge (Middle),14,5,,0.0,0.357
+General Knowledge (Primary),5,2,,0.2,0.2
+Geography (Middle),17,8,,0.353,0.059
+Geography (Primary),5,3,,0.6,0.0
+History (Middle),14,7,,0.357,0.286
+History (Primary),6,3,,0.333,0.0
+Islamic Studies (Middle),17,2,,0.059,0.471
+Management (Univ),6,3,,0.167,0.0
+Natural Science (Middle),18,5,,0.0,0.167
+Philosophy (High),4,2,,0.0,0.5
+Physics (High),18,5,,0.167,0.056
+Political Science (Univ),14,6,,0.0,0.214
+Social Science (Middle),12,4,,0.083,0.083

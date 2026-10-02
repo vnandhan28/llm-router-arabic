@@ -264,13 +264,56 @@ Practice check: the random router's APGR was about 0.46–0.50, close to the the
 
 ---
 
-## Next steps
+## Final run ✅
 
-1. Close browsers and other heavy apps, and set the laptop to never sleep.
-2. Run `scripts\run_model.bat strong`. It takes several hours and can be resumed.
-3. Run `scripts\run_analysis.bat`.
-4. Fill in the README results section from `results/`, using only real numbers.
-5. Optional Phase 8, only if requested: English→Arabic transfer, and a RouteLLM `Router` subclass.
+### Strong run
+
+- `Qwen2.5-3B-Instruct`, median 25.5 s per question. RAM was almost full (0.1 GB free).
+- **Stopped by choice after 1,011 questions**, to save about 4.5 more hours.
+  - The questions were processed in shuffled order, so these 1,011 are a random subset of the 1,500.
+  - They cover all 40 subjects.
+- 0 errors, 6 parse failures (0.6%). The answers file was checked: all 2,511 lines are valid.
+
+### Analysis
+
+`scripts\run_analysis.bat`, with the log in `data/run_analysis.log`.
+
+**The two models**
+- Weak accuracy is **38.2%**, strong **53.1%**, and random guessing 29.6%.
+- `need_strong` = 29.4%. In 14.4% of questions the weak model was right and the strong one wrong.
+- **Oracle ceiling: 67.6%.**
+
+**Routers**
+- No learned router clearly beats random routing. AUROC was 0.51–0.53.
+- Unseen-subject APGR [95% CI]:
+
+  | Router | APGR [95% CI] |
+  |---|---|
+  | random | 0.485 [0.403, 0.562] |
+  | length | 0.595 [0.516, 0.694] |
+  | tfidf | 0.545 [0.467, 0.630] |
+  | embedding | 0.547 [0.468, 0.630] |
+  | oracle | 1.318 |
+
+**Why:** the weak model answers "A" 49.6% of the time, while "A" is correct 32.6% of the time.
+
+| True answer | Weak accuracy | `need_strong` rate |
+|---|---|---|
+| A | 66.1% | 14.2% |
+| B–E | 24.7% | 36.7% |
+
+The label therefore depends mostly on the hidden answer key, which a router cannot see.
+
+**Outputs**
+- README results, limitations and the opening finding are filled in with these real numbers.
+- `results/` holds the metrics CSVs, both curve plots, the per-subject stats and the failure analysis.
+- The demo router was retrained on the 1,011 real questions. Its cut-off is 0.493 (about 46.1% of questions to strong).
+
+## Possible next steps (only if wanted)
+
+- **Finish the remaining 489 strong answers** (about 4.5 h). This narrows the confidence intervals.
+- **Shuffle the option order**, or use a less biased weak model (e.g. Qwen2.5-1.5B), to give routers a learnable signal.
+- **Optional Phase 8:** English→Arabic transfer with RouteLLM's MMLU data, and a RouteLLM `Router` subclass.
 
 ## Commits so far
 
