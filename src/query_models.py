@@ -194,7 +194,7 @@ def build_routing_table(sample: pd.DataFrame):
     wide = resp.pivot_table(index="id", columns="role", values="correct", aggfunc="last")
     if not {"weak", "strong"} <= set(wide.columns):
         print("routing table not written yet: need answers from both models")
-        return
+        return False
     table = sample[["id", "subject", "prompt"]].merge(
         wide.rename(columns={"weak": "weak_correct", "strong": "strong_correct"}),
         left_on="id", right_index=True, how="inner",
@@ -202,6 +202,9 @@ def build_routing_table(sample: pd.DataFrame):
     table[["weak_correct", "strong_correct"]] = table[["weak_correct", "strong_correct"]].astype(bool)
     table.to_csv(config.ROUTING_TABLE_PATH, index=False, encoding="utf-8")
     print(f"routing table: {len(table)} complete rows -> {config.ROUTING_TABLE_PATH.name}")
+    if len(table) < len(sample):
+        print(f"WARNING: {len(sample) - len(table)} questions still miss an answer from one model")
+    return True
 
 
 def test_strong():
@@ -247,7 +250,8 @@ if __name__ == "__main__":
     if args.test_strong:
         test_strong()
     elif args.table:
-        build_routing_table(get_sample(args.n))
+        if not build_routing_table(get_sample(args.n)):
+            sys.exit(1)
     elif args.role:
         run(args.n, args.role)
     else:

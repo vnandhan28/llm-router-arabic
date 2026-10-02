@@ -7,13 +7,20 @@ from dotenv import load_dotenv
 # --- Paths ---
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
-RESULTS_DIR = ROOT / "results"
-DATA_DIR.mkdir(exist_ok=True)
-RESULTS_DIR.mkdir(exist_ok=True)
 
-RESPONSES_PATH = DATA_DIR / "responses.jsonl"
-ROUTING_TABLE_PATH = DATA_DIR / "routing_table.csv"
-EMBED_CACHE_PATH = DATA_DIR / "embeddings_e5_small.npy"
+# PRACTICE mode (set env var PRACTICE=1): the strong-model answers are SIMULATED, only to
+# test that the code runs. Everything is then read from / written to data/practice/,
+# never results/, so fake numbers can't mix with real ones.
+PRACTICE = os.getenv("PRACTICE") == "1"
+WORK_DIR = DATA_DIR / "practice" if PRACTICE else DATA_DIR
+RESULTS_DIR = WORK_DIR / "results" if PRACTICE else ROOT / "results"
+WORK_DIR.mkdir(parents=True, exist_ok=True)
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+RESPONSES_PATH = DATA_DIR / "responses.jsonl"  # always the real model answers
+ROUTING_TABLE_PATH = WORK_DIR / "routing_table.csv"
+SPLITS_PATH = WORK_DIR / "splits.json"
+EMBED_CACHE_PATH = DATA_DIR / "embeddings_e5_small.npz"  # {ids, vectors}, keyed by question id
 
 # --- Secrets ---
 load_dotenv(ROOT / ".env")
@@ -37,6 +44,10 @@ TEMPERATURE = 0.0
 EMBED_MODEL = "intfloat/multilingual-e5-small"
 TEST_SIZE = 0.30
 N_GROUP_FOLDS = 5
+
+# --- Label sanity warnings (Phase 3) ---
+WEAK_TOO_GOOD = 0.90       # weak accuracy above this -> little room for routing to help
+NEAR_CHANCE_MARGIN = 0.05  # weak accuracy within 5 points of random guessing -> warn
 
 # --- Evaluation ---
 STRONG_PCTS = list(range(0, 101, 5))  # % of questions routed to the strong model
