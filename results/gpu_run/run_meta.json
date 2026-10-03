@@ -1,0 +1,12 @@
+{
+  "models": {
+    "weak": "Qwen/Qwen2.5-0.5B-Instruct",
+    "strong": "Qwen/Qwen2.5-14B-Instruct-AWQ"
+  },
+  "n": 1500,
+  "seed": 42,
+  "hardware": "Kaggle 2x Tesla T4",
+  "decoding": "greedy, max_new_tokens=8",
+  "prompt": "src/query_models.build_prompt, unchanged from CPU run",
+  "note": "replies_*.jsonl rows are {row, reply}; row indexes sample_key.jsonl"
+}
